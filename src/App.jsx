@@ -42,6 +42,7 @@ export const App = () => {
             if (!totalHits) {
               throw new Error(
                 'Ничего не найдено. Пожалуйста, попробуйте другой запрос'
+                // 123
               );
             }
             toast.success(
