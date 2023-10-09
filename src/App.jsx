@@ -1,7 +1,7 @@
 import ImageGallery from 'components/ImageGallery/ImageGallery';
 import Loader from 'components/Loader/Loader';
 import { SearchBar } from 'components/SearchBar/SearchBar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getData } from 'helper/api';
 import { PER_PAGE } from 'utils/constants';
@@ -22,45 +22,41 @@ export const App = () => {
     loading: false,
   });
 
-  const prevFormData = useRef(formData);
-
   useEffect(() => {
     let isMounted = true;
     async function fetchData() {
       const { page, q } = formData;
-      if (prevFormData.current.page !== page || prevFormData.current.q !== q) {
-        setFormData(prevFormData => ({ ...prevFormData, loading: true }));
-        try {
-          const { hits, totalHits } = await getData({ q, page });
-          if (isMounted) {
-            setFormData(prevFormData => ({
-              ...prevFormData,
-              images: [...prevFormData.images, ...hits],
-              totalHits,
-              loading: false,
-            }));
-            if (!totalHits) {
-              throw new Error(
-                'Ничего не найдено. Пожалуйста, попробуйте другой запрос'
-                // 123
-              );
-            }
-            toast.success(
-              `Показано ${
-                PER_PAGE * page <= totalHits ? PER_PAGE * page : totalHits
-              } изображений из ${totalHits}`,
-              {
-                position: 'top-right',
-                autoClose: 1000,
-                hideProgressBar: true,
-                closeOnClick: true,
-                theme: 'colored',
-              }
+      setFormData(prevFormData => ({ ...prevFormData, loading: true }));
+      if (!q) return;
+      try {
+        const { hits, totalHits } = await getData({ q, page });
+        if (isMounted) {
+          setFormData(prevFormData => ({
+            ...prevFormData,
+            images: [...prevFormData.images, ...hits],
+            totalHits,
+            loading: false,
+          }));
+          if (!totalHits) {
+            throw new Error(
+              'Ничего не найдено. Пожалуйста, попробуйте другой запрос'
             );
           }
-        } catch (error) {
-          toast.error(error.message);
+          toast.success(
+            `Показано ${
+              PER_PAGE * page <= totalHits ? PER_PAGE * page : totalHits
+            } изображений из ${totalHits}`,
+            {
+              position: 'top-right',
+              autoClose: 1000,
+              hideProgressBar: true,
+              closeOnClick: true,
+              theme: 'colored',
+            }
+          );
         }
+      } catch (error) {
+        toast.error(error.message);
       }
     }
 
