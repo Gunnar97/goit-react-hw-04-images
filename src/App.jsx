@@ -6,37 +6,32 @@ import { toast } from 'react-toastify';
 import { getData } from 'helper/api';
 import { PER_PAGE } from 'utils/constants';
 import { Modal } from 'components/Modal/Modal';
-import 'react-toastify/dist/ReactToastify.css';
 import Button from 'components/Button/Button';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const App = () => {
-  const [formData, setFormData] = useState({
-    modal: {
-      currentImage: '',
-      isOpen: false,
-      tags: '',
-    },
-    images: [],
-    page: 1,
-    q: '',
-    loading: false,
+  const [modal, setModal] = useState({
+    currentImage: '',
+    isOpen: false,
+    tags: '',
   });
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState('');
+  const [totalHits, setTotalHits] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
     async function fetchData() {
-      const { page, q } = formData;
-      setFormData(prevFormData => ({ ...prevFormData, loading: true }));
-      if (!q) return;
+      setLoading(true);
+      if (!q && page === 1) return;
       try {
         const { hits, totalHits } = await getData({ q, page });
         if (isMounted) {
-          setFormData(prevFormData => ({
-            ...prevFormData,
-            images: [...prevFormData.images, ...hits],
-            totalHits,
-            loading: false,
-          }));
+          setImages(prev => [...prev, ...hits]);
+          setTotalHits(totalHits);
+
           if (!totalHits) {
             throw new Error(
               'Ничего не найдено. Пожалуйста, попробуйте другой запрос'
@@ -57,6 +52,8 @@ export const App = () => {
         }
       } catch (error) {
         toast.error(error.message);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -65,34 +62,29 @@ export const App = () => {
     return () => {
       isMounted = false;
     };
-  }, [formData.q, formData.page]);
+  }, [q, page]);
 
-  const setQuery = q => {
-    setFormData({ ...formData, q, page: 1, images: [] });
+  const setQuery = query => {
+    if (q !== query) {
+      setPage(1);
+      setImages([]);
+      setQ(query);
+    }
   };
 
   const handleModal = (img, tags) => {
-    setFormData(prevFormData => ({
-      ...formData,
-      modal: {
-        isOpen: !prevFormData.modal.isOpen,
-        currentImage: img,
-        tags,
-      },
-    }));
+    setModal({
+      currentImage: img,
+      isOpen: !isOpen,
+      tags,
+    });
   };
 
   const handleLoadMore = () => {
-    setFormData(prev => ({ ...formData, page: prev.page + 1 }));
+    setPage(prev => prev + 1);
   };
 
-  const {
-    images,
-    modal: { isOpen, currentImage, tags },
-    loading,
-    totalHits,
-  } = formData;
-
+  const { currentImage, isOpen, tags } = modal;
   return (
     <div className="app">
       <SearchBar setQuery={setQuery} />
